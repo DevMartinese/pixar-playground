@@ -17,6 +17,10 @@ export type LampLight = {
   halo: boolean
   haloSize: number
   haloOpacity: number
+  // --- Charco de luz en el piso (resplandor aditivo donde el foco pega el suelo) ---
+  floorPool: boolean
+  floorPoolOpacity: number
+  floorPoolSize: number // multiplica el radio del charco (1 = huella real del cono)
 }
 
 export const DEFAULT_LAMP_LIGHT: LampLight = {
@@ -35,4 +39,7 @@ export const DEFAULT_LAMP_LIGHT: LampLight = {
   halo: true,
   haloSize: 0.8,
   haloOpacity: 0.9,
+  floorPool: true,
+  floorPoolOpacity: 0.85,
+  floorPoolSize: 1.1,
 }

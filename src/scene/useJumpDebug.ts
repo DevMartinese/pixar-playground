@@ -144,6 +144,9 @@ export function useJumpDebug(onReplay?: () => void): {
     halo: { value: dl.halo, label: 'halo bulbo' },
     haloSize: { value: dl.haloSize, min: 0, max: 3, step: 0.05, label: 'tamaño halo' },
     haloOpacity: { value: dl.haloOpacity, min: 0, max: 2, step: 0.05, label: 'brillo halo' },
+    floorPool: { value: dl.floorPool, label: 'charco en piso' },
+    floorPoolOpacity: { value: dl.floorPoolOpacity, min: 0, max: 2, step: 0.05, label: 'brillo charco' },
+    floorPoolSize: { value: dl.floorPoolSize, min: 0.2, max: 4, step: 0.05, label: 'tamaño charco' },
   })
   const light: LampLight = {
     on: lightCtl.on,
@@ -161,6 +164,9 @@ export function useJumpDebug(onReplay?: () => void): {
     halo: lightCtl.halo,
     haloSize: lightCtl.haloSize,
     haloOpacity: lightCtl.haloOpacity,
+    floorPool: lightCtl.floorPool,
+    floorPoolOpacity: lightCtl.floorPoolOpacity,
+    floorPoolSize: lightCtl.floorPoolSize,
   }
 
   // --- Estado en vivo: telemetría de los valores animados (lo que cambia frame a

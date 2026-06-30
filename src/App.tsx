@@ -3,6 +3,7 @@ import type { Mesh } from 'three'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { Leva } from 'leva'
 import { Scene } from './scene/Scene'
+import { FixarScene } from './scene/FixarScene'
 import { SquashControls } from './scene/SquashControls'
 import { LuxoPlayground } from './luxo/LuxoPlayground'
 import { LuxoRealPlayground } from './luxoReal/LuxoRealPlayground'
@@ -23,6 +24,18 @@ function PixarRoute() {
   )
 }
 
+// Sandbox aislado para probar el FIX del bop (usa jumpAnimationFixed).
+function FixarRoute() {
+  const iRef = useRef<Mesh>(null)
+  const [collapsed, setCollapsed] = useState(false)
+  return (
+    <>
+      <Leva collapsed={{ collapsed, onChange: setCollapsed }} />
+      <FixarScene iRef={iRef} onReplay={() => setCollapsed(true)} />
+    </>
+  )
+}
+
 const navStyle: React.CSSProperties = {
   position: 'fixed', top: 8, left: 8, zIndex: 10, display: 'flex', gap: 8,
   font: '14px system-ui', background: 'rgba(0,0,0,.4)', padding: '6px 10px', borderRadius: 6,
@@ -37,6 +50,7 @@ export default function App() {
         <Link to="/luxo-real" style={{ color: '#fff' }}>Luxo real</Link>
         <Link to="/luxo-armada" style={{ color: '#fff' }}>Luxo armada</Link>
         <Link to="/power-pole" style={{ color: '#fff' }}>Poste</Link>
+        <Link to="/fixar" style={{ color: '#fff' }}>Fixar</Link>
       </nav>
       <Routes>
         <Route path="/" element={<PixarRoute />} />
@@ -44,6 +58,7 @@ export default function App() {
         <Route path="/luxo-real" element={<LuxoRealPlayground />} />
         <Route path="/luxo-armada" element={<LuxoArmadaPlayground />} />
         <Route path="/power-pole" element={<PowerPolePlayground />} />
+        <Route path="/fixar" element={<FixarRoute />} />
       </Routes>
     </BrowserRouter>
   )
