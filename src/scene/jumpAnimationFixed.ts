@@ -255,6 +255,53 @@ function addHop(
     .add(state, { scaleY: 1, scaleXZ: 1, ease: 'outElastic', duration: params.landMs * 0.8 })
 }
 
+// Modos del CRUCE (Paso 1) — sólo /fixar, para comparar en vivo:
+//  'actual' = addHop tal cual (hang 120ms, se siente entrecortado en la cima)
+//  'A'      = addHop con hangMs reducido (50ms) → menos congelamiento en la cima
+//  'B'      = addHopContinuous → ascenso+hang+caída fusionados en UN tween de y
+export type CrossMode = 'actual' | 'A' | 'B'
+const VARIANT_A_HANG_MS = 50
+
+// Variante B (vuelo continuo): reemplaza los 3 beats de vuelo (ascenso + hang +
+// caída) por UN SOLO tween de `y` (joroba senoidal, misma técnica que el bop), con
+// x PAREJA en todo el vuelo y stretch que vuelve a neutro en movimiento (sin escala
+// plana congelada). Mantiene intactos anticipación, hold, impacto y recuperación.
+function addHopContinuous(
+  tl: ReturnType<typeof createTimeline>,
+  state: JumpState,
+  params: JumpParams,
+  x0: number,
+  step: number,
+) {
+  const bendMax = params.bendDeg * DEG
+  const bendFlight = params.flightBendDeg * DEG
+  const airMs = params.ascendMs + params.hangMs + params.fallMs
+  const upFrac = params.ascendMs / airMs
+  tl
+    // anticipación + hold (intactos): se agacha y encorva para tomar impulso.
+    .add(state, { scaleY: params.squashY, scaleXZ: params.squashXZ, bend: bendMax, ease: 'outQuad', duration: params.anticipateMs })
+    .add(state, { scaleY: params.squashY, ease: 'linear', duration: params.holdMs })
+    // VUELO CONTINUO: un único tween. `y` = joroba senoidal (sin pausa en la cima),
+    // `x` pareja x0→x0+step (sin el quiebre ascenso/caída), stretch desincronizado.
+    .add(state, {
+      y: {
+        from: 0, to: 1, ease: 'linear', duration: airMs,
+        modifier: (p: number) => {
+          const phase = p < upFrac ? (p / upFrac) * 0.5 : 0.5 + ((p - upFrac) / (1 - upFrac)) * 0.5
+          return params.hopHeight * Math.sin(phase * Math.PI)
+        },
+      },
+      x: { to: x0 + step, ease: 'linear', duration: airMs },
+      scaleY: [{ to: params.stretchY, duration: airMs * 0.3, ease: 'outQuad' }, { to: 1, duration: airMs * 0.7, ease: 'inQuad' }],
+      scaleXZ: [{ to: params.stretchXZ, duration: airMs * 0.3, ease: 'outQuad' }, { to: 1, duration: airMs * 0.7, ease: 'inQuad' }],
+      bend: [{ to: bendFlight, duration: airMs * 0.3 }, { to: 0, duration: airMs * 0.7 }],
+      duration: airMs,
+    })
+    // impacto + recuperación elástica (intactos).
+    .add(state, { scaleY: params.squashY, scaleXZ: params.squashXZ, bend: 0, ease: 'outQuad', duration: params.landMs * 0.2 })
+    .add(state, { scaleY: 1, scaleXZ: 1, ease: 'outElastic', duration: params.landMs * 0.8 })
+}
+
 // Coreografía: cruza saltando y salta ENCIMA de la "I" aplastándola. Con
 // `lookBeats` (lámpara) suma las "miradas" (mira la I antes de saltar y mira a la
 // cámara al final); sin él (cilindro) es sólo cruzar → saltar encima → aplastar.
@@ -262,11 +309,12 @@ function addHop(
 export function buildJumpOntoI(
   state: JumpState,
   iMesh: Object3D,
-  opts: { lookBeats?: boolean } = {},
+  opts: { lookBeats?: boolean; crossMode?: CrossMode } = {},
   c: JumpChoreo = DEFAULT_CHOREO,
   params: JumpParams = DEFAULT_JUMP,
 ) {
   const lookBeats = opts.lookBeats ?? false
+  const crossMode = opts.crossMode ?? 'actual'
   // One-shot (no loop): la I queda APLASTADA al final.
   const tl = createTimeline({ loop: false })
   const D = c.deflate
@@ -282,8 +330,14 @@ export function buildJumpOntoI(
   const xPast = c.iLocalX + (lookBeats ? c.overshoot : 0.4)
   const step = xPast / HOPS_CROSS
 
-  // 1. Cruce.
-  for (let i = 0; i < HOPS_CROSS; i++) addHop(tl, state, params, i * step, step)
+  // 1. Cruce. El modo elige el "vuelo" de cada salto (toggle de /fixar). En todos,
+  //    cada salto avanza `step` en x y termina en x0+step → el x final del cruce
+  //    (7·step = xPast) NO cambia entre variantes: el Paso 4 arranca en el mismo lugar.
+  const crossParams = crossMode === 'A' ? { ...params, hangMs: VARIANT_A_HANG_MS } : params
+  for (let i = 0; i < HOPS_CROSS; i++) {
+    if (crossMode === 'B') addHopContinuous(tl, state, crossParams, i * step, step)
+    else addHop(tl, state, crossParams, i * step, step)
+  }
 
   // 2. Frena.
   tl.add(state, { y: 0, ease: 'linear', duration: c.brakeMs })

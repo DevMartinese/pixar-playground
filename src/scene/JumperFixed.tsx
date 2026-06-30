@@ -6,7 +6,7 @@ import { CylinderGeometry } from 'three'
 import { useFrame } from '@react-three/fiber'
 import type { ThreeElements } from '@react-three/fiber'
 import { buildJumpTimeline, buildJumpOntoI, createJumpState } from './jumpAnimationFixed'
-import type { JumpChoreo, JumpTimeline, JumpState } from './jumpAnimationFixed'
+import type { JumpChoreo, JumpTimeline, JumpState, CrossMode } from './jumpAnimationFixed'
 
 const HEIGHT = 2.0 // alto del cilindro (a la altura de las letras, que miden 2)
 const RADIUS = 0.5
@@ -46,8 +46,9 @@ type JumperProps = ThreeElements['group'] & {
   replayKey?: number
   tlRef?: { current: JumpTimeline | null }
   stateRef?: { current: JumpState }
+  crossMode?: CrossMode
 }
-export function JumperFixed({ getI, choreo, replayKey = 0, tlRef, stateRef: externalStateRef, ...props }: JumperProps) {
+export function JumperFixed({ getI, choreo, replayKey = 0, tlRef, stateRef: externalStateRef, crossMode = 'actual', ...props }: JumperProps) {
   const animRef = useRef<Group>(null)
   const iMeshRef = useRef<Object3D | null>(null)
   const localStateRef = useRef(createJumpState())
@@ -62,7 +63,7 @@ export function JumperFixed({ getI, choreo, replayKey = 0, tlRef, stateRef: exte
     const iMesh = getI?.() ?? null
     iMeshRef.current = iMesh
     const tl = iMesh
-      ? buildJumpOntoI(stateRef.current, iMesh, {}, choreo)
+      ? buildJumpOntoI(stateRef.current, iMesh, { crossMode }, choreo)
       : buildJumpTimeline(stateRef.current)
     if (tlRef) tlRef.current = tl
     return () => {
@@ -71,7 +72,7 @@ export function JumperFixed({ getI, choreo, replayKey = 0, tlRef, stateRef: exte
       if (iMesh) iMesh.scale.set(1, 1, 1) // restaura la I al desmontar/repetir
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [replayKey])
+  }, [replayKey, crossMode])
 
   useEffect(() => () => geo.dispose(), [geo])
 

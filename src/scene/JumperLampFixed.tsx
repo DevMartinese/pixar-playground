@@ -4,7 +4,7 @@ import type { Group, Object3D, Mesh, MeshBasicMaterial } from 'three'
 import { useFrame } from '@react-three/fiber'
 import type { ThreeElements } from '@react-three/fiber'
 import { buildJumpTimeline, buildJumpOntoI, createJumpState, DEFAULT_CHOREO } from './jumpAnimationFixed'
-import type { JumpChoreo, JumpTimeline, JumpState } from './jumpAnimationFixed'
+import type { JumpChoreo, JumpTimeline, JumpState, CrossMode } from './jumpAnimationFixed'
 import { LuxoLampModel } from '../luxoArmada/LuxoLampModel'
 import { DEFAULT_LAMP_LIGHT } from '../luxoArmada/lampLight'
 import type { LampLight } from '../luxoArmada/lampLight'
@@ -30,6 +30,7 @@ type JumperLampProps = ThreeElements['group'] & {
   stateRef?: { current: JumpState }
   light?: Partial<LampLight>
   floorPoolRef?: { current: Mesh | null } // charco de luz en el piso (vive en la escena)
+  crossMode?: CrossMode
 }
 export function JumperLampFixed({
   getI,
@@ -41,6 +42,7 @@ export function JumperLampFixed({
   stateRef: externalStateRef,
   light,
   floorPoolRef,
+  crossMode = 'actual',
   ...props
 }: JumperLampProps) {
   const animRef = useRef<Group>(null)
@@ -58,7 +60,7 @@ export function JumperLampFixed({
     const iMesh = getI?.() ?? null
     iMeshRef.current = iMesh
     const tl = iMesh
-      ? buildJumpOntoI(stateRef.current, iMesh, { lookBeats: true }, choreo)
+      ? buildJumpOntoI(stateRef.current, iMesh, { lookBeats: true, crossMode }, choreo)
       : buildJumpTimeline(stateRef.current)
     if (tlRef) tlRef.current = tl
     return () => {
@@ -67,7 +69,7 @@ export function JumperLampFixed({
       if (iMesh) iMesh.scale.set(1, 1, 1) // restaura la I al desmontar/repetir
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [replayKey])
+  }, [replayKey, crossMode])
 
   useFrame(() => {
     const g = animRef.current

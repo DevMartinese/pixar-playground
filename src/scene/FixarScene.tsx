@@ -8,6 +8,7 @@ import { useControls } from 'leva'
 import { PixarText } from './PixarText'
 import { JumperFixed } from './JumperFixed'
 import { JumperLampFixed } from './JumperLampFixed'
+import type { CrossMode } from './jumpAnimationFixed'
 import { useJumpDebug } from './useJumpDebug'
 
 // Textura radial (blanco al centro → transparente) para el charco de luz aditivo
@@ -47,6 +48,12 @@ export function FixarContent({ iRef, onReplay }: SceneProps) {
   const { grosor } = useControls('Letras', {
     grosor: { value: 0.5, min: 0.05, max: 1, step: 0.01, label: 'grosor' },
   })
+  // Toggle SÓLO de /fixar: variante del "vuelo" en el cruce hacia la I (Paso 1).
+  //  actual = hang 120ms · A = hang 50ms · B = vuelo continuo (1 tween de y).
+  const { modoCruce } = useControls('Cruce · fixar', {
+    modoCruce: { value: 'actual', options: ['actual', 'A', 'B'], label: 'vuelo del cruce' },
+  })
+  const crossMode = modoCruce as CrossMode
   // Panel debug: tunea TODA la coreografía en vivo + ▶ repetir / 📋 copiar config +
   // timeline (reproducir/pausar/scrub). `tlRef` recibe el timeline del jumper activo.
   const { choreo, replayKey, tlRef, lampPose, bodyYaw, stateRef, light } = useJumpDebug(onReplay)
@@ -73,9 +80,9 @@ export function FixarContent({ iRef, onReplay }: SceneProps) {
           interno (avanza en +x, ≈15.2 ≈ ancho del texto) se mapea a -x → cruza de
           la R a la P. */}
       {objeto === 'lámpara' ? (
-        <JumperLampFixed position={[7.55, 0, 1.8]} rotation={[0, Math.PI, 0]} getI={getI} choreo={choreo} replayKey={replayKey} tlRef={tlRef} pose={lampPose} bodyYaw={bodyYaw} stateRef={stateRef} light={light} floorPoolRef={poolRef} />
+        <JumperLampFixed position={[7.55, 0, 1.8]} rotation={[0, Math.PI, 0]} getI={getI} choreo={choreo} replayKey={replayKey} tlRef={tlRef} pose={lampPose} bodyYaw={bodyYaw} stateRef={stateRef} light={light} floorPoolRef={poolRef} crossMode={crossMode} />
       ) : (
-        <JumperFixed position={[7.55, 0, 1.8]} rotation={[0, Math.PI, 0]} getI={getI} choreo={choreo} replayKey={replayKey} tlRef={tlRef} stateRef={stateRef} />
+        <JumperFixed position={[7.55, 0, 1.8]} rotation={[0, Math.PI, 0]} getI={getI} choreo={choreo} replayKey={replayKey} tlRef={tlRef} stateRef={stateRef} crossMode={crossMode} />
       )}
 
       {/* Plano INVISIBLE a ras del piso: escribe profundidad pero NO color
